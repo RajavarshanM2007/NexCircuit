@@ -1,0 +1,99 @@
+# Production Docker Compose — runs VIT ELECTRONICS natively connected to AWS RDS PostgreSQL.
+# Usage:
+#   docker compose -f infrastructure/docker-compose.prod.yml up -d --build
+
+services:
+
+  # ── Redis Cache & Queue ──────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: vit-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [vit-network]
+
+  # ── Database migration (runs against AWS RDS PostgreSQL before backend starts)
+  migrate:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: vit-migrate
+    command: ["npx", "--yes", "prisma@5", "migrate", "deploy"]
+    env_file: ../.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-vitelectronics}?schema=public}
+    networks: [vit-network]
+    restart: "no"
+
+  # ── Application API Backend ──────────────────────────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: vit-backend
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-vitelectronics}?schema=public}
+      REDIS_URL:    ${REDIS_URL:-redis://redis:6379}
+      NODE_ENV:     production
+    ports:
+      - "3001:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks: [vit-network]
+
+  # ── Application Storefront Frontend ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_GOOGLE_ENABLED: ${NEXT_PUBLIC_GOOGLE_ENABLED:-false}
+        NEXT_PUBLIC_API_URL:        ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_CDN_URL:        ${NEXT_PUBLIC_CDN_URL:-}
+        NEXT_PUBLIC_SITE_URL:       ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+    container_name: vit-frontend
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      INTERNAL_API_URL: http://backend:3001
+      NEXTAUTH_URL:     ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET:  ${NEXTAUTH_SECRET:-9f8e7d6c5b4a3928172635445566778899aabbccddeeff001122334455667788}
+      AUTH_SECRET:      ${AUTH_SECRET:-${NEXTAUTH_SECRET:-9f8e7d6c5b4a3928172635445566778899aabbccddeeff001122334455667788}}
+      NODE_ENV:         production
+      PORT:             3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    networks: [vit-network]
+
+volumes:
+  redis_data:
+
+networks:
+  vit-network:
+    driver: bridge

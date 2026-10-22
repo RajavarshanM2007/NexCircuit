@@ -1,0 +1,97 @@
+# ============================================================
+# .gitignore — VIT Tech Platform
+# ============================================================
+
+# ── Dependencies ──────────────────────────────────────────────
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# ── Build output ──────────────────────────────────────────────
+dist/
+*/dist/
+.next/
+*/.next/
+out/
+*/out/
+build/
+*/build/
+
+# ── Environment & Secrets ─────────────────────────────────────
+# Keep template files, ignore actual credentials and private keys
+.env
+.env.*
+*.env
+!.env.example
+!*/.env.example
+*.pem
+*.key
+*.pub
+*.cert
+*.crt
+id_rsa*
+vit-key*
+
+# ── Terraform ─────────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+!terraform.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# ── Docker & Database Data ────────────────────────────────────
+postgres_data/
+redis_data/
+*.sqlite
+*.sqlite-journal
+*.db
+
+# ── Prisma generated client tmp files ─────────────────────────
+**/query_engine-*.tmp*
+
+# ── Logs & Debugging ──────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Testing & Coverage ────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Editor & IDE ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swo
+*.swp
+.antigravity-ide/
+
+# ── Operating System ──────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── TypeScript & Turbopack ────────────────────────────────────
+*.tsbuildinfo
+.turbo/
+*.tgz

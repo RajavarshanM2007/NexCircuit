@@ -1,0 +1,28 @@
+# ============================================================
+# Example Terraform Variables File (terraform.tfvars)
+# Copy this to terraform.tfvars and fill in your values
+# ============================================================
+
+aws_region         = "us-east-1"
+environment        = "production"
+project_name       = "vitelectronics"
+
+# Email where you will receive the $1 AWS Budget threshold alerts and SNS order alerts
+budget_alert_email = "admin@vitelectronics.com"
+
+# RDS Database Master Credentials (Keep secure)
+db_username        = "postgres"
+db_password        = "VitElectronics2026!"
+db_name            = "vitelectronics"
+use_existing_db    = false
+
+# Free Tier Compute Sizing
+ec2_instance_type  = "t3.micro"
+
+# Optional SSH Key Name in AWS (leave blank to use AWS Systems Manager Session Manager)
+ec2_key_name       = ""
+
+# CREDIT PRESERVATION (Critical for accounts with limited credits):
+# Set to false to avoid ~$26/month OpenSearch charges (Postgres search fallback is automatic)
+enable_opensearch    = false
+monthly_budget_limit = "10.00"

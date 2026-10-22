@@ -1,0 +1,7 @@
+# Snyk policy file — suppressions for known-safe patterns
+# https://docs.snyk.io/snyk-cli/test-for-vulnerabilities/the-.snyk-file
+version: v1.25.0
+
+ignore: {}
+
+patch: {}
