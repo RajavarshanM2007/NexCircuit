@@ -68,7 +68,7 @@ variable "ec2_key_name" {
 variable "app_repo_url" {
   description = "Git repository URL to clone on EC2 initialization"
   type        = string
-  default     = "https://github.com/likhithm123/AWS-PROJECT.git"
+  default     = "https://github.com/RajavarshanM2007/NexCircuit.git"
 }
 
 variable "enable_opensearch" {
