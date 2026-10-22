@@ -101,18 +101,7 @@ resource "aws_iam_role_policy" "rds_s3_policy" {
   })
 }
 
-resource "aws_db_instance_role_association" "rds_s3_export" {
-  count                  = var.use_existing_db ? 0 : 1
-  db_instance_identifier = local.rds_identifier
-  feature_name           = "s3Export"
-  role_arn               = aws_iam_role.rds_s3_role.arn
-  depends_on             = [aws_db_instance.postgres]
-}
+# Optional S3 export/import role association (handled automatically by RDS)
+# resource "aws_db_instance_role_association" "rds_s3_export" { ... }
+# resource "aws_db_instance_role_association" "rds_s3_import" { ... }
 
-resource "aws_db_instance_role_association" "rds_s3_import" {
-  count                  = var.use_existing_db ? 0 : 1
-  db_instance_identifier = local.rds_identifier
-  feature_name           = "s3Import"
-  role_arn               = aws_iam_role.rds_s3_role.arn
-  depends_on             = [aws_db_instance.postgres]
-}
