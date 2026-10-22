@@ -25,7 +25,7 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: vit-migrate
-    command: ["sh", "-c", "npx --yes prisma@5 migrate deploy || npx --yes prisma@5 db push --accept-data-loss"]
+    command: ["sh", "-c", "(npx --yes prisma@5 migrate deploy || npx --yes prisma@5 db push --accept-data-loss) && node prisma/seed.js"]
     env_file: ../.env
     networks: [vit-network]
     restart: "no"

@@ -23,6 +23,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           if (payload?.accessToken) return payload
           return null
         } catch (err: any) {
+          if (err?.response?.status === 401) {
+            return null
+          }
           const msg = err?.response?.data?.message ?? err?.message ?? 'Login failed'
           throw new Error(Array.isArray(msg) ? msg.join(', ') : String(msg))
         }
