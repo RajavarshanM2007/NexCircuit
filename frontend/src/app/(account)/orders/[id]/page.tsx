@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth'
 import { api } from '@/lib/api'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { CancelOrderButton } from '@/components/account/CancelOrderButton'
+import { Download, FileText } from 'lucide-react'
 import type { Order } from '@/types/order'
 
 const STATUS_STEPS = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED']
@@ -27,9 +28,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="space-y-12">
-      <div>
-        <h1 className="font-serif text-3xl tracking-luxury mb-2">{order.orderNumber}</h1>
-        <p className="text-luxury-muted text-sm">{formatDate(order.createdAt)}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-luxury-gray/50 pb-6">
+        <div>
+          <h1 className="font-serif text-3xl tracking-luxury mb-2">{order.orderNumber}</h1>
+          <p className="text-luxury-muted text-sm">{formatDate(order.createdAt)}</p>
+        </div>
+        <div>
+          <a
+            href={`/api/proxy/orders/${order.id}/invoice`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-luxury-gold text-luxury-gold hover:bg-luxury-gold hover:text-luxury-black transition-all text-xs tracking-luxury uppercase font-medium shadow-sm hover:shadow-luxury-gold/20"
+          >
+            <Download className="w-4 h-4" />
+            Download Invoice PDF
+          </a>
+        </div>
       </div>
 
       {/* Tracking timeline */}

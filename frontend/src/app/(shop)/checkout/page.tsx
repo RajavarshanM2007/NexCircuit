@@ -55,7 +55,20 @@ export default function CheckoutPage() {
       })
       const order = res.data?.data ?? res.data
       clearCart()
-      router.push(`/orders/${order.id}`)
+
+      // Automatically trigger PDF invoice download
+      try {
+        const invoiceUrl = `/api/proxy/orders/${order.id}/invoice`
+        const a = document.createElement('a')
+        a.href = invoiceUrl
+        a.target = '_blank'
+        a.download = `invoice-${order.orderNumber || order.id}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } catch {}
+
+      router.push(`/orders/${order.id}?invoice=downloaded`)
     } catch (err: any) {
       setError(err?.response?.data?.message ?? err?.message ?? 'Failed to place order. Please try again.')
       setLoading(false)

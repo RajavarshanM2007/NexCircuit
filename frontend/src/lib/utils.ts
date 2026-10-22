@@ -36,6 +36,7 @@ const TRUSTED_CDN_SUFFIXES = ['.cloudfront.net', '.amazonaws.com']
 export function safeCdnUrl(url: string | null | undefined): string {
   const safe = safeUrl(url)
   if (!safe) return ''
+  if (safe.startsWith('/')) return safe
   try {
     const { hostname } = new URL(safe)
     if (

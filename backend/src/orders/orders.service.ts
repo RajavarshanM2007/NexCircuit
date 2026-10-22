@@ -101,7 +101,7 @@ export class OrdersService {
     return order
   }
 
-  // ── Invoice: generate, store in S3, save to DB, email when CONFIRMED ────────
+  // ── Invoice: generate, store in S3 or local proxy URL, save to DB, email when CONFIRMED ────────
   async sendConfirmedInvoice(orderId: string) {
     const order = await this.prisma.order.findUnique({
       where:   { id: orderId },
@@ -112,20 +112,28 @@ export class OrdersService {
     try {
       const pdf = await this.invoice.generateInvoicePdf(orderId)
 
-      // Upload PDF to S3
-      const bucket = process.env.AWS_S3_BUCKET || 'vitelectronics-media'
-      const cdnBase = process.env.AWS_CLOUDFRONT_DOMAIN
-        ? (process.env.AWS_CLOUDFRONT_DOMAIN.startsWith('http') ? process.env.AWS_CLOUDFRONT_DOMAIN : `https://${process.env.AWS_CLOUDFRONT_DOMAIN}`)
-        : (process.env.NEXT_PUBLIC_CDN_URL || 'https://media.vitelectronics.com')
+      let pdfUrl = `/api/proxy/orders/${order.id}/invoice`
 
-      const key = `invoices/${order.orderNumber}.pdf`
-      await s3Client.send(new PutObjectCommand({
-        Bucket:      bucket,
-        Key:         key,
-        Body:        pdf,
-        ContentType: 'application/pdf',
-      }))
-      const pdfUrl = `${cdnBase}/${key}`
+      // Upload PDF to S3 if configured
+      if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+        try {
+          const bucket = process.env.AWS_S3_BUCKET || 'vitelectronics-media'
+          const cdnBase = process.env.AWS_CLOUDFRONT_DOMAIN
+            ? (process.env.AWS_CLOUDFRONT_DOMAIN.startsWith('http') ? process.env.AWS_CLOUDFRONT_DOMAIN : `https://${process.env.AWS_CLOUDFRONT_DOMAIN}`)
+            : (process.env.NEXT_PUBLIC_CDN_URL || 'https://media.vitelectronics.com')
+
+          const key = `invoices/${order.orderNumber}.pdf`
+          await s3Client.send(new PutObjectCommand({
+            Bucket:      bucket,
+            Key:         key,
+            Body:        pdf,
+            ContentType: 'application/pdf',
+          }))
+          pdfUrl = `${cdnBase}/${key}`
+        } catch (s3Err: any) {
+          console.warn('S3 invoice upload skipped (using local endpoint):', s3Err?.message)
+        }
+      }
 
       // Save invoice record to DB (upsert so re-confirming doesn't create duplicates)
       await this.prisma.invoice.upsert({
@@ -151,24 +159,45 @@ export class OrdersService {
         .replace(/\{\{total\}\}/g,         `₹${Number(order.total).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`)
 
       // Email to customer
-      await this.email.sendEmail(
-        order.user.email, subject, body,
-        [{ filename: `invoice-${order.orderNumber}.pdf`, content: pdf, contentType: 'application/pdf' }],
-      )
+      try {
+        await this.email.sendEmail(
+          order.user.email, subject, body,
+          [{ filename: `invoice-${order.orderNumber}.pdf`, content: pdf, contentType: 'application/pdf' }],
+        )
+      } catch (mailErr: any) {
+        console.warn('Customer invoice email skipped:', mailErr?.message)
+      }
 
       // Email to admin
       const adminEmail = process.env.ADMIN_EMAIL
       if (adminEmail) {
-        await this.email.sendEmail(
-          adminEmail,
-          `Order Confirmed: ${order.orderNumber}`,
-          `<p>Order ${order.orderNumber} confirmed for ${order.user.firstName} ${order.user.lastName}. Invoice attached.</p>`,
-          [{ filename: `invoice-${order.orderNumber}.pdf`, content: pdf, contentType: 'application/pdf' }],
-        )
+        try {
+          await this.email.sendEmail(
+            adminEmail,
+            `Order Confirmed: ${order.orderNumber}`,
+            `<p>Order ${order.orderNumber} confirmed for ${order.user.firstName} ${order.user.lastName}. Invoice attached.</p>`,
+            [{ filename: `invoice-${order.orderNumber}.pdf`, content: pdf, contentType: 'application/pdf' }],
+          )
+        } catch (adminMailErr: any) {
+          console.warn('Admin invoice email skipped:', adminMailErr?.message)
+        }
       }
     } catch (e) {
       console.error('Invoice generation failed:', e)
     }
+  }
+
+  async getOrderInvoicePdf(userId: string, role: string, orderId: string): Promise<{ pdf: Buffer; orderNumber: string }> {
+    const order = await this.prisma.order.findUnique({
+      where:   { id: orderId },
+      include: { items: true, user: true, address: true },
+    })
+    if (!order) throw new NotFoundException('Order not found')
+    if (role !== 'ADMIN' && order.userId !== userId) {
+      throw new BadRequestException('Unauthorized access to invoice')
+    }
+    const pdf = await this.invoice.generateInvoicePdf(orderId)
+    return { pdf, orderNumber: order.orderNumber }
   }
 
   // ── Standard order creation with direct invoice generation ──────────────
@@ -233,12 +262,15 @@ export class OrdersService {
       `Order ${order.orderNumber} placed for ₹${order.total}. Customer ID: ${order.userId}`,
     ).catch(() => {})
 
-    // Automatically generate invoice PDF, upload to S3, and save to DB
-    this.sendConfirmedInvoice(order.id).catch(err => {
+    // Automatically generate invoice PDF, upload to S3 or local proxy, and save to DB
+    await this.sendConfirmedInvoice(order.id).catch(err => {
       console.error('Invoice generation failed:', err)
     })
 
-    return order
+    return {
+      ...order,
+      invoiceUrl: `/api/proxy/orders/${order.id}/invoice`,
+    }
   }
 
   async cancelOrder(userId: string, orderId: string) {

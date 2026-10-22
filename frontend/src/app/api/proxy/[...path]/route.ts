@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@/lib/auth'
 
 export const runtime = 'nodejs'
 
@@ -17,6 +18,16 @@ async function proxy(
     // the original alongside chunked encoding trips body-parser's size check
     if (key !== 'host' && key !== 'content-length') headers.set(key, value)
   })
+
+  // If Authorization header is not set (e.g. direct link in browser tab), inject from session
+  if (!headers.has('authorization')) {
+    try {
+      const session = await auth()
+      if ((session as any)?.accessToken) {
+        headers.set('authorization', `Bearer ${(session as any).accessToken}`)
+      }
+    } catch {}
+  }
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD'
 

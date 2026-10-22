@@ -81,7 +81,7 @@ export default function AdminInvoicesPage() {
                   <td className="py-3 px-4 text-right">
                     {/* snyk-disable-next-line javascript/DomXss */}
                     <a
-                      href={safeCdnUrl(inv.pdfUrl)}
+                      href={inv.pdfUrl ? safeCdnUrl(inv.pdfUrl) : `/api/proxy/orders/${inv.id}/invoice`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-luxury-gold text-xs tracking-luxury uppercase hover:text-luxury-white transition-colors"

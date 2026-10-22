@@ -50,13 +50,14 @@ export default function InvoicesPage() {
                 </div>
               </div>
               <a
-                href={inv.pdfUrl}
+                href={inv.pdfUrl || `/api/proxy/orders/${inv.orderId}/invoice`}
                 target="_blank"
                 rel="noopener noreferrer"
+                download={`invoice-${inv.orderNumber}.pdf`}
                 className="flex items-center gap-2 text-luxury-gold text-xs tracking-luxury uppercase hover:text-luxury-white transition-colors border border-luxury-gold/40 px-4 py-2 rounded-full hover:border-luxury-white"
               >
                 <Download className="w-3.5 h-3.5" />
-                Download
+                Download PDF
               </a>
             </div>
           ))}
