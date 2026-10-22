@@ -32,21 +32,20 @@ fi
 echo "🔍 Checking AWS authentication..."
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 AWS_ARN=$(aws sts get-caller-identity --query Arn --output text)
-REGION=$(aws configure get region 2>/dev/null || echo "ap-south-1")
-[ -z "$REGION" ] && REGION="ap-south-1"
+REGION="${AWS_REGION:-ap-southeast-2}"
 
 echo "✅ Authenticated to AWS Account: ${AWS_ACCOUNT_ID}"
-echo "✅ Target AWS Region: ${REGION}"
+echo "✅ Target AWS Region: ${REGION} (Sydney)"
 
 # ── 2. Provision 23 AWS Services via Terraform ────────────────
 echo ""
-echo "🚀 Provisioning all 23 AWS Services via Terraform..."
+echo "🚀 Provisioning all 23 AWS Services via Terraform in ${REGION}..."
 cd "$ROOT_DIR/infrastructure/terraform"
 
 terraform init -upgrade >/dev/null 2>&1 || terraform init >/dev/null 2>&1
 
-echo "Applying Terraform configuration with auto-approval..."
-terraform apply -auto-approve
+echo "Applying Terraform configuration with auto-approval in ${REGION}..."
+terraform apply -auto-approve -var="aws_region=${REGION}"
 
 # ── 3. Extract Infrastructure Outputs ──────────────────────────
 echo ""
