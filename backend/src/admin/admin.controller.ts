@@ -50,8 +50,30 @@ export class AdminController {
   @Get('invoices')
   @AdminOnly()
   async getAllInvoices() {
+    // Ensure all orders have an invoice record
+    const ordersWithoutInvoice = await this.prisma.order.findMany({
+      where: { invoice: null },
+      select: { id: true, userId: true, orderNumber: true },
+    })
+
+    for (const ord of ordersWithoutInvoice) {
+      await this.prisma.invoice.upsert({
+        where: { orderId: ord.id },
+        update: {},
+        create: {
+          orderId: ord.id,
+          userId: ord.userId,
+          orderNumber: ord.orderNumber,
+          pdfUrl: `/api/proxy/orders/${ord.id}/invoice`,
+        },
+      }).catch(() => {})
+    }
+
     return this.prisma.invoice.findMany({
-      include: { user: { select: { firstName: true, lastName: true, email: true } } },
+      include: {
+        user: { select: { firstName: true, lastName: true, email: true } },
+        order: { select: { status: true, total: true } },
+      },
       orderBy: { createdAt: 'desc' },
     })
   }

@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { formatPrice, formatDate } from '@/lib/utils'
 import { OrderStatusSelect } from '@/components/admin/OrderStatusSelect'
 import { StatusBadge } from '@/components/admin/StatusBadge'
+import { FileText, Download } from 'lucide-react'
 
 interface AdminOrderDetail {
   id: string
@@ -46,12 +47,23 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
       <Link href="/admin/orders" className="text-luxury-muted text-xs uppercase tracking-luxury hover:text-luxury-gold transition-colors">
         &larr; All Orders
       </Link>
-      <div className="flex items-center justify-between mt-4 mb-10">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4 mb-10">
         <div>
           <h1 className="font-serif text-3xl tracking-luxury">{order.orderNumber}</h1>
           <p className="text-luxury-muted text-sm mt-1">{formatDate(order.createdAt)}</p>
         </div>
-        <OrderStatusSelect orderId={order.id} status={order.status} />
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/proxy/orders/${order.id}/invoice`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-luxury-gold text-xs tracking-luxury uppercase hover:text-luxury-white transition-colors border border-luxury-gold/50 hover:border-luxury-white px-4 py-2 rounded-full"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Download Invoice PDF
+          </a>
+          <OrderStatusSelect orderId={order.id} status={order.status} />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 mb-10">

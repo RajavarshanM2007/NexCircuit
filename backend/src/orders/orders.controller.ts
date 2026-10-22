@@ -19,8 +19,21 @@ export class OrdersController {
   // ── User invoices (Must come before :id route) ────────────────────────────
   @Get('invoices/all')
   getUserInvoices(@Req() req: any) {
+    if (req.user?.role === 'ADMIN' && req.query?.all === 'true') {
+      return this.prisma.invoice.findMany({
+        include: {
+          user: { select: { firstName: true, lastName: true, email: true } },
+          order: { select: { status: true, total: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      })
+    }
     return this.prisma.invoice.findMany({
       where:   { userId: req.user.id },
+      include: {
+        user: { select: { firstName: true, lastName: true, email: true } },
+        order: { select: { status: true, total: true } },
+      },
       orderBy: { createdAt: 'desc' },
     })
   }

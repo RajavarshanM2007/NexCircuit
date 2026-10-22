@@ -6,6 +6,7 @@ import { FileText, Download }  from 'lucide-react'
 
 interface AdminInvoice {
   id:          string
+  orderId?:    string
   orderNumber: string
   pdfUrl:      string
   createdAt:   string
@@ -81,10 +82,10 @@ export default function AdminInvoicesPage() {
                   <td className="py-3 px-4 text-right">
                     {/* snyk-disable-next-line javascript/DomXss */}
                     <a
-                      href={inv.pdfUrl ? safeCdnUrl(inv.pdfUrl) : `/api/proxy/orders/${inv.id}/invoice`}
+                      href={inv.pdfUrl || `/api/proxy/orders/${inv.orderId || inv.id}/invoice`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-luxury-gold text-xs tracking-luxury uppercase hover:text-luxury-white transition-colors"
+                      className="inline-flex items-center gap-1.5 text-luxury-gold text-xs tracking-luxury uppercase hover:text-luxury-white transition-colors border border-luxury-gold/40 px-3 py-1 rounded-full hover:border-luxury-white"
                     >
                       <Download className="w-3 h-3" />
                       PDF
