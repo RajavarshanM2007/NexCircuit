@@ -57,9 +57,11 @@ locals {
               ./aws/install
               rm -rf aws awscliv2.zip
 
-              # 5. Prepare workspace directory
+              # 5. Prepare workspace directory and clone repo
               mkdir -p /home/ubuntu/app
               chown -R ubuntu:ubuntu /home/ubuntu/app
+              su - ubuntu -c "git clone https://github.com/RajavarshanM2007/NexCircuit.git /home/ubuntu/app || true"
+              su - ubuntu -c "cd /home/ubuntu/app && docker compose -f infrastructure/docker-compose.local.yml up -d || true"
 
               # 6. Log readiness
               echo "VIT Electronics EC2 Instance initialization completed successfully at $(date)" > /var/log/vitelectronics-init.log
