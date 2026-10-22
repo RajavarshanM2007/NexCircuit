@@ -27,8 +27,6 @@ services:
     container_name: vit-migrate
     command: ["sh", "-c", "npx --yes prisma@5 migrate deploy || npx --yes prisma@5 db push --accept-data-loss"]
     env_file: ../.env
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-vitelectronics}?schema=public}
     networks: [vit-network]
     restart: "no"
 
@@ -41,9 +39,7 @@ services:
     restart: unless-stopped
     env_file: ../.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-vitelectronics}?schema=public}
-      REDIS_URL:    ${REDIS_URL:-redis://redis:6379}
-      NODE_ENV:     production
+      NODE_ENV: production
     ports:
       - "3001:3001"
     depends_on:
